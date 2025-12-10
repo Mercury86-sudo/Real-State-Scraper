@@ -1,9 +1,9 @@
 name: Actualizar Datos Inmobiliarios
 
 on:
-  workflow_dispatch:      # <--- ESTO ACTIVA EL BOTÓN
+  workflow_dispatch:
   schedule:
-    - cron: '0 9 * * 1'   # Corre lunes a las 3 AM
+    - cron: '0 9 * * 1'
 
 permissions:
   contents: write
