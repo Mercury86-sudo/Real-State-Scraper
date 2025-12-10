@@ -9,12 +9,12 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from geopy.geocoders import Nominatim
 
-# --- CONFIGURACIÓN ---
+
 PAGES_TO_SCAN = 10
 OUTPUT_FILE = "data.csv"
 TARGET_CITY = "Mérida, Yucatán"
 
-# Cache de coordenadas
+
 COORD_CACHE = {
     "Temozón Norte": [21.0655, -89.6338],
     "Cholul": [21.0456, -89.5516],
@@ -70,7 +70,7 @@ def run_scraper():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
     
-    # --- ANTI-BOT ---
+    
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     options.add_argument(f"user-agent={user_agent}")
     options.add_argument("--disable-blink-features=AutomationControlled")
@@ -79,7 +79,7 @@ def run_scraper():
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
-    # Evasión de detección WebDriver
+    
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
     data = []
@@ -93,7 +93,7 @@ def run_scraper():
             driver.get(url)
             time.sleep(random.uniform(5, 8))
             
-            # Chequeo de seguridad
+           
             if page == 1:
                 print(f"🔎 Título: {driver.title}")
                 if "Access Denied" in driver.title:
