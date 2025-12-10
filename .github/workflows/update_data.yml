@@ -30,10 +30,11 @@ jobs:
       - name: Ejecutar Robot Scraper
         run: python scraper.py
 
-      - name: Guardar cambios
+- name: Guardar cambios
         run: |
           git config --global user.name 'Robot Inmobiliario'
           git config --global user.email 'bot@noreply.github.com'
           git add data.csv
-          git commit -m "Auto-update data" || echo "Sin cambios"
+          # El "|| echo" evita que falle si no hay cambios nuevos
+          git commit -m "Auto-update data" || exit 0
           git push
