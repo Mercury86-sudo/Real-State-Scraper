@@ -1,53 +1,36 @@
 name: Actualizar Datos Inmobiliarios
 
 on:
-  workflow_dispatch:      
+  workflow_dispatch:
   schedule:
-    - cron: '0 9 * * 1'   
-
-permissions:
-  contents: write
+    - cron: '0 9 * * 1'
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checar repositorio
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MI_TOKEN_PERSONAL }}
 
-      - name: Instalar Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Instalar Chrome
-        uses: browser-actions/setup-chrome@latest
+      - uses: browser-actions/setup-chrome@latest
 
-      - name: Instalar dependencias
-        run: |
-          pip install pandas selenium webdriver-manager geopy
+      - run: pip install pandas selenium webdriver-manager geopy
 
-      - name: Ejecutar Robot Scraper
-        run: python scraper.py
+      - run: python scraper.py
 
-      - name: Guardar cambios (Método Forzado)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          
+      - run: |
           git config --global user.name 'Robot Inmobiliario'
           git config --global user.email 'bot@noreply.github.com'
-          
-          
           git add data.csv
-          
-          
           if git diff --staged --quiet; then
-            echo "⚠️ No hubo cambios en data.csv, terminando sin error."
+            echo "Sin cambios"
           else
-            
-            git commit -m "Auto-update data [skip ci]"
-            
-            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" HEAD:main
+            git commit -m "Auto-update data"
+            git push
           fi
