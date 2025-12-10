@@ -1,0 +1,39 @@
+name: Actualizar Datos Inmobiliarios
+
+on:
+  workflow_dispatch:      # <--- ESTO ACTIVA EL BOTÓN
+  schedule:
+    - cron: '0 9 * * 1'   # Corre lunes a las 3 AM
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Instalar Chrome
+        uses: browser-actions/setup-chrome@latest
+
+      - name: Instalar dependencias
+        run: |
+          pip install pandas selenium webdriver-manager geopy
+
+      - name: Ejecutar Robot Scraper
+        run: python scraper.py
+
+      - name: Guardar cambios
+        run: |
+          git config --global user.name 'Robot Inmobiliario'
+          git config --global user.email 'bot@noreply.github.com'
+          git add data.csv
+          git commit -m "Auto-update data" || echo "Sin cambios"
+          git push
