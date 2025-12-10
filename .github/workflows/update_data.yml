@@ -1,9 +1,9 @@
 name: Actualizar Datos Inmobiliarios
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:      
   schedule:
-    - cron: '0 9 * * 1'
+    - cron: '0 9 * * 1'   
 
 permissions:
   contents: write
@@ -11,6 +11,7 @@ permissions:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checar repositorio
         uses: actions/checkout@v4
@@ -30,11 +31,23 @@ jobs:
       - name: Ejecutar Robot Scraper
         run: python scraper.py
 
-- name: Guardar cambios
+      - name: Guardar cambios (Método Forzado)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          
           git config --global user.name 'Robot Inmobiliario'
           git config --global user.email 'bot@noreply.github.com'
+          
+          
           git add data.csv
-          # El "|| echo" evita que falle si no hay cambios nuevos
-          git commit -m "Auto-update data" || exit 0
-          git push
+          
+          
+          if git diff --staged --quiet; then
+            echo "⚠️ No hubo cambios en data.csv, terminando sin error."
+          else
+            
+            git commit -m "Auto-update data [skip ci]"
+            
+            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" HEAD:main
+          fi
