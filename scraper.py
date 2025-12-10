@@ -8,14 +8,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from geopy.geocoders import Nominatim
-import urllib.parse 
 
-# --- CONFIGURACIÓN AUTOMATIZADA ---
-PAGES_TO_SCAN = 10  # Escaneamos más páginas ya que es una vez a la semana
+# --- CONFIGURACIÓN ---
+PAGES_TO_SCAN = 10
 OUTPUT_FILE = "data.csv"
-TARGET_CITY = "Mérida, Yucatán" # Búsqueda general
+TARGET_CITY = "Mérida, Yucatán"
 
-# Cache de coordenadas (Igual que antes para velocidad)
+# Cache de coordenadas
 COORD_CACHE = {
     "Temozón Norte": [21.0655, -89.6338],
     "Cholul": [21.0456, -89.5516],
@@ -63,20 +62,28 @@ def get_real_coords(zone_name):
     return 20.9676 + random.uniform(-0.02, 0.02), -89.6237 + random.uniform(-0.02, 0.02)
 
 def run_scraper():
-    print("--- 🤖 INICIANDO EJECUCIÓN AUTOMATIZADA (GITHUB ACTIONS) ---")
+    print("--- 🤖 INICIANDO EJECUCIÓN (MODO FURTIVO) ---")
     
     options = Options()
-    options.add_argument("--headless") # OBLIGATORIO PARA LA NUBE (Sin pantalla)
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-blink-features=AutomationControlled")
     
+    # --- ANTI-BOT ---
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    options.add_argument(f"user-agent={user_agent}")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    
+    # Evasión de detección WebDriver
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
     data = []
     processed_ids = set()
-    
-    # URL General para Mérida
     base_url = "https://www.lamudi.com.mx/yucatan/merida/for-sale/"
 
     try:
@@ -84,10 +91,20 @@ def run_scraper():
             url = f"{base_url}?page={page}"
             print(f"Scanning: {url}")
             driver.get(url)
-            time.sleep(5 + random.random()) 
+            time.sleep(random.uniform(5, 8))
             
+            # Chequeo de seguridad
+            if page == 1:
+                print(f"🔎 Título: {driver.title}")
+                if "Access Denied" in driver.title:
+                    print("⚠️ ALERTA: Acceso denegado por el sitio web.")
+
             prices = driver.find_elements(By.XPATH, "//*[contains(text(), '$')]")
             
+            if not prices:
+                print(f"⚠️ No se encontraron precios en pag {page}.")
+                continue
+
             for elem in prices:
                 try:
                     p_txt = elem.text.strip()
@@ -123,15 +140,16 @@ def run_scraper():
                             "Ubicacion": loc, "Link": link, "lat": lat, "lon": lon
                         })
                 except: continue
-    except Exception as e: print(e)
+
+    except Exception as e: print(f"Error: {e}")
     finally: driver.quit()
 
     if data:
         df = pd.DataFrame(data)
         df.to_csv(OUTPUT_FILE, index=False)
-        print(f"✅ EXITO: {len(df)} propiedades guardadas en {OUTPUT_FILE}")
+        print(f"✅ EXITO: {len(df)} propiedades guardadas.")
     else:
-        print("⚠️ No se encontraron datos.")
+        print("⚠️ No se encontraron datos válidos.")
 
 if __name__ == "__main__":
     run_scraper()
