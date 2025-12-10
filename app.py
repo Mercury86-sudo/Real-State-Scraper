@@ -5,12 +5,12 @@ import plotly.express as px
 import pandas as pd
 import os
 
-# CONFIGURACIÓN
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY],
                 meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}])
 app.title = "MERIDA.MARKET.WATCH"
 
-# ESTILOS BLACK AMEX (El mismo CSS pro de antes)
+
 app.index_string = '''
 <!DOCTYPE html>
 <html>
@@ -41,14 +41,14 @@ def load_data():
 df_initial = load_data()
 last_update = "UNKNOWN"
 if os.path.exists("data.csv"):
-    # Fecha de modificación del archivo
+    
     import datetime
     ts = os.path.getmtime("data.csv")
     last_update = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 
 app.layout = dbc.Container([
     
-    # HEADER LIMPIO
+    
     dbc.Row([
         dbc.Col([
             html.H5("INMO.INTELLIGENCE // WEEKLY REPORT", className="mb-0 text-white"),
@@ -59,7 +59,7 @@ app.layout = dbc.Container([
         ], width=4)
     ], className="mb-4 border-bottom border-dark pb-3"),
 
-    # SOLO FILTROS (Ya no hay botón de escaneo)
+    
     dbc.Row([
         dbc.Col([
             html.Label("FILTER ZONE", className="text-muted small"),
@@ -73,10 +73,10 @@ app.layout = dbc.Container([
         ], width=12)
     ], className="mb-4"),
 
-    # KPIs
+    
     dbc.Row(id="kpi-row", className="mb-4 g-2"),
 
-    # MAPA
+    
     dbc.Row([
         dbc.Col([
             dbc.Card([
@@ -85,7 +85,7 @@ app.layout = dbc.Container([
         ], width=12)
     ], className="mb-4"),
 
-    # TABLA
+    
     dbc.Row([
         dbc.Col([
             html.H6("ASSET LEDGER", className="text-muted mb-2"),
@@ -113,20 +113,21 @@ def update_view(zonas):
     dff = df.copy()
     if zonas: dff = dff[dff['Ubicacion'].isin(zonas)]
 
-    # KPIs
+   
     def kpi(l, v):
         return dbc.Col(dbc.Card(dbc.CardBody([html.Small(l, className="text-muted small"), html.H3(v, className="text-white")])), width=3)
     
     kpis = [kpi("ASSETS", f"{len(dff)}"), kpi("AVG PRICE", f"${dff['Precio'].mean()/1000000:,.2f}M"),
             kpi("AVG SIZE", f"{dff['Metros'].mean():.0f} m²"), kpi("YIELD/m²", f"${dff['Precio_m2'].mean():,.0f}")]
 
-    # MAPA
+    
     fig = px.scatter_mapbox(dff, lat="lat", lon="lon", hover_name="Titulo", color="Precio_m2",
                             color_continuous_scale=["#333", "#FFF"], size="Metros", size_max=12, zoom=11, mapbox_style="carto-darkmatter")
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="#000", plot_bgcolor="#000", coloraxis_showscale=False)
 
     cols = [{"name": i, "id": i} for i in ["Titulo", "Ubicacion", "Precio", "Metros", "Precio_m2"]]
     return kpis, fig, dff.to_dict('records'), cols
+    server = app.server
 
 if __name__ == "__main__":
     import webbrowser
