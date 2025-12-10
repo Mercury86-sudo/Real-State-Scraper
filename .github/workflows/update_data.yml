@@ -25,12 +25,19 @@ jobs:
       - run: python scraper.py
 
       - run: |
-          git config --global user.name 'Robot Inmobiliario'
-          git config --global user.email 'bot@noreply.github.com'
-          git add data.csv
-          if git diff --staged --quiet; then
-            echo "Sin cambios"
+          # Solo intentamos guardar si el archivo existe
+          if [ -f data.csv ]; then
+            git config --global user.name 'Robot Inmobiliario'
+            git config --global user.email 'bot@noreply.github.com'
+            
+            git add data.csv
+            
+            if git diff --staged --quiet; then
+              echo "El archivo existe pero no tiene cambios nuevos."
+            else
+              git commit -m "Auto-update data"
+              git push
+            fi
           else
-            git commit -m "Auto-update data"
-            git push
+            echo "⚠️ ALERTA: El scraper no generó data.csv (probablemente encontró 0 propiedades)."
           fi
