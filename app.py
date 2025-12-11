@@ -5,11 +5,12 @@ import plotly.express as px
 import pandas as pd
 import os
 
-
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY],
                 meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}])
-app.title = "MERIDA.MARKET.WATCH"
 
+server = app.server
+
+app.title = "MERIDA.MARKET.WATCH"
 
 app.index_string = '''
 <!DOCTYPE html>
@@ -32,23 +33,21 @@ def load_data():
     if os.path.exists("data.csv"):
         try:
             df = pd.read_csv("data.csv")
-            df = df.dropna(subset=['Precio', 'Metros'])
+            df = df.dropna(subset=['Precio', 'Metros', 'lat', 'lon'])
             df = df[df['Precio_m2'] < 80000]
             return df
         except: return pd.DataFrame()
     return pd.DataFrame()
 
 df_initial = load_data()
+
 last_update = "UNKNOWN"
 if os.path.exists("data.csv"):
-    
     import datetime
     ts = os.path.getmtime("data.csv")
     last_update = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 
 app.layout = dbc.Container([
-    
-    
     dbc.Row([
         dbc.Col([
             html.H5("INMO.INTELLIGENCE // WEEKLY REPORT", className="mb-0 text-white"),
@@ -59,7 +58,6 @@ app.layout = dbc.Container([
         ], width=4)
     ], className="mb-4 border-bottom border-dark pb-3"),
 
-    
     dbc.Row([
         dbc.Col([
             html.Label("FILTER ZONE", className="text-muted small"),
@@ -73,10 +71,8 @@ app.layout = dbc.Container([
         ], width=12)
     ], className="mb-4"),
 
-    
     dbc.Row(id="kpi-row", className="mb-4 g-2"),
 
-    
     dbc.Row([
         dbc.Col([
             dbc.Card([
@@ -85,7 +81,6 @@ app.layout = dbc.Container([
         ], width=12)
     ], className="mb-4"),
 
-    
     dbc.Row([
         dbc.Col([
             html.H6("ASSET LEDGER", className="text-muted mb-2"),
@@ -113,24 +108,18 @@ def update_view(zonas):
     dff = df.copy()
     if zonas: dff = dff[dff['Ubicacion'].isin(zonas)]
 
-   
     def kpi(l, v):
         return dbc.Col(dbc.Card(dbc.CardBody([html.Small(l, className="text-muted small"), html.H3(v, className="text-white")])), width=3)
     
     kpis = [kpi("ASSETS", f"{len(dff)}"), kpi("AVG PRICE", f"${dff['Precio'].mean()/1000000:,.2f}M"),
             kpi("AVG SIZE", f"{dff['Metros'].mean():.0f} m²"), kpi("YIELD/m²", f"${dff['Precio_m2'].mean():,.0f}")]
 
-    
     fig = px.scatter_mapbox(dff, lat="lat", lon="lon", hover_name="Titulo", color="Precio_m2",
                             color_continuous_scale=["#333", "#FFF"], size="Metros", size_max=12, zoom=11, mapbox_style="carto-darkmatter")
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="#000", plot_bgcolor="#000", coloraxis_showscale=False)
 
     cols = [{"name": i, "id": i} for i in ["Titulo", "Ubicacion", "Precio", "Metros", "Precio_m2"]]
     return kpis, fig, dff.to_dict('records'), cols
-    server = app.server
 
 if __name__ == "__main__":
-    import webbrowser
-    from threading import Timer
-    Timer(1, lambda: webbrowser.open("http://127.0.0.1:8050/")).start()
-    app.run(debug=True)
+    app.run_server(debug=True)
